@@ -1,0 +1,157 @@
+# go-valhalla-build
+
+[![Build](https://github.com/smartify/go-valhalla-build/actions/workflows/build.yml/badge.svg)](https://github.com/smartify/go-valhalla-build/actions/workflows/build.yml)
+
+Build system for generating Valhalla C++ bindings for Go. This repository produces the shared library (`libvalhalla_go.so`) required by the [go-valhalla](https://github.com/smartify/go-valhalla) package.
+
+## Prerequisites
+
+- [Nix package manager](https://nixos.org/download.html)
+- Linux environment (building on other platforms currently not supported)
+
+## Building
+
+```bash
+# Clone the repository
+git clone https://github.com/smartify/go-valhalla-build
+cd go-valhalla-build
+
+# Build using Nix
+nix-build
+
+# The shared library will be in result/lib/libvalhalla_go.so
+```
+
+## Installation
+
+After building, install the shared library:
+
+```bash
+# Copy to system library directory
+sudo cp result/lib/libvalhalla_go.so /usr/local/lib/
+
+# Update shared library cache
+sudo ldconfig
+
+# Verify installation
+ldconfig -p | grep valhalla_go
+```
+
+## Project Structure
+
+```
+.
+├── bindings/              # C++ binding code
+│   ├── default.nix        # Nix build definition
+│   ├── protobuf/         # Protobuf build config
+│   ├── valhalla/         # Valhalla build config
+│   ├── valhalla_go.cpp   # C++ bindings
+│   └── valhalla_go.h     # C header
+├── .github/              # GitHub Actions workflows
+└── default.nix           # Main Nix build file
+```
+
+## Version Compatibility
+
+| go-valhalla-build | Valhalla | go-valhalla |
+|-------------------|----------|-------------|
+| v1.0.0           | 3.3.0    | v1.x.x      |
+
+## Development
+
+### Setting up Development Environment
+
+1. Using VS Code + Dev Containers:
+   ```bash
+   # Open in VS Code
+   code go-valhalla-build
+
+   # Click "Reopen in Container" when prompted
+   ```
+
+2. Manual setup:
+   ```bash
+   # Install Nix
+   curl -L https://nixos.org/nix/install | sh
+
+   # Enable Nix flakes if you plan to use them
+   mkdir -p ~/.config/nix
+   echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+   ```
+
+### Building for Development
+
+```bash
+# Build with debug symbols
+nix-build -A debug
+
+# Run tests
+nix-build -A tests
+```
+
+## Release Process
+
+1. Update version in relevant files
+2. Create and push a new tag
+3. GitHub Actions will:
+   - Build the library
+   - Run tests
+   - Create a release
+   - Upload binary artifacts
+
+## Debugging
+
+### Common Issues
+
+1. Library not found:
+   ```bash
+   # Check if library is in correct location
+   ls /usr/local/lib/libvalhalla_go.so
+
+   # Verify library cache
+   ldconfig -p | grep valhalla_go
+   ```
+
+2. Build failures:
+   ```bash
+   # Clean Nix store and rebuild
+   nix-collect-garbage
+   nix-build --rebuild
+   ```
+
+### Debug Build
+
+```bash
+# Build with debug symbols
+nix-build -A debug
+
+# Use GDB
+gdb --args your_test_program
+```
+
+## Credits
+
+Based on the original work of [valhalla-go](https://github.com/vandreltd/valhalla-go) by Vandre Ltd. <vandreltd@gmail.com>, distributed under the ISC License.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+Please ensure:
+- Build succeeds with Nix
+- Changes are properly documented
+- Tests are added for new features
+
+## License
+
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Valhalla](https://github.com/valhalla/valhalla) routing engine
+- [Nix](https://nixos.org/) package manager
+- Original valhalla-go developers
