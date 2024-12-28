@@ -41,7 +41,7 @@ jobs:
         
     - name: Clone go-valhalla for testing
       run: |
-        git clone https://github.com/smartify/go-valhalla.git
+        git clone https://github.com/smartfiy/go-valhalla.git
         cd go-valhalla
         go mod download
         
