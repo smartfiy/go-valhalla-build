@@ -1,0 +1,61 @@
+name: "Build and Test"
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Nix
+      uses: cachix/install-nix-action@v30
+      with:
+        install_url: https://releases.nixos.org/nix/nix-2.25.3/install
+        nix_path: nixpkgs=channel:nixos-unstable
+        
+    - name: Build library
+      run: |
+        nix-build
+        
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.18'
+        
+    - name: Install shared library
+      run: |
+        sudo cp result/lib/libvalhalla_go.so /usr/local/lib/
+        sudo ldconfig
+        
+    - name: Clone go-valhalla for testing
+      run: |
+        git clone https://github.com/smartify/go-valhalla.git
+        cd go-valhalla
+        go mod download
+        
+    - name: Run go-valhalla tests
+      run: |
+        cd go-valhalla
+        go test -v ./...
+        
+    - name: Upload artifact (on all builds)
+      uses: actions/upload-artifact@v3
+      with:
+        name: libvalhalla_go.so
+        path: result/lib/libvalhalla_go.so
+        
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: result/lib/libvalhalla_go.so
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
